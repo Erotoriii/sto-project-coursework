@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: API Системи управління кінотеатром
+  version: 1.0.0
+  description: REST API контракт для бронювання квитків, управління фільмами та розкладом сеансів.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Локальний сервер розробки
+paths:
+  /movies:
+    get:
+      summary: Отримати список фільмів
+      tags: [Movies]
+      responses:
+        '200':
+          description: Успішна відповідь зі списком фільмів
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movie'
+    post:
+      summary: Додати новий фільм в каталог
+      tags: [Movies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Movie'
+      responses:
+        '201':
+          description: Фільм успішно додано
+        '400':
+          description: Помилка валідації вхідних даних
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /movies/{id}:
+    get:
+      summary: Отримати деталі конкретного фільму
+      tags: [Movies]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Інформація про фільм
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '404':
+          description: Фільм не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sessions:
+    get:
+      summary: Отримати розклад сеансів
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Список сеансів
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Session'
+    post:
+      summary: Створити новий сеанс
+      tags: [Sessions]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Session'
+      responses:
+        '201':
+          description: Сеанс успішно створено
+        '400':
+          description: Накладка часу або помилка валідації
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sessions/{id}:
+    get:
+      summary: Отримати деталі сеансу
+      tags: [Sessions]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Дані сеансу
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          description: Сеанс не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Оновити дані сеансу (змінити час або зал)
+      tags: [Sessions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Session'
+      responses:
+        '200':
+          description: Сеанс успішно оновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  /tickets:
+    get:
+      summary: Переглянути всі продані квитки
+      tags: [Tickets]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список проданих квитків
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+    post:
+      summary: Оформити продаж квитка
+      tags: [Tickets]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+      responses:
+        '201':
+          description: Квиток успішно продано та збережено
+        '400':
+          description: Місце вже зайняте або помилка оплати
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{id}:
+    get:
+      summary: Отримати квиток за ID
+      tags: [Tickets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Детальні дані квитка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '404':
+          description: Квиток не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Скасувати квиток (повернення)
+      tags: [Tickets]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Квиток успішно скасовано
+        '404':
+          description: Квиток не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Movie:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Бетмен: Частина 2"
+        duration:
+          type: integer
+          description: Тривалість у хвилинах
+          example: 135
+        age_rating:
+          type: string
+          example: "16+"
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 101
+        datetime:
+          type: string
+          format: date-time
+          example: "2026-05-17T18:00:00Z"
+        base_price:
+          type: number
+          format: float
+          example: 150.00
+        movie_id:
+          type: integer
+          example: 1
+        hall_id:
+          type: integer
+          example: 2
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5001
+        status:
+          type: string
+          enum: [new, paid, cancelled]
+          example: "paid"
+        session_id:
+          type: integer
+          example: 101
+        seat_id:
+          type: integer
+          example: 45
+        movie:
+          $ref: '#/components/schemas/Movie'
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Місце вже заброньовано іншим користувачем"
